@@ -12,9 +12,16 @@ export interface Note {
 // ВИПРАВЛЕНО: Додано обов'язковий експорт параметрів для fetch-запитів
 export interface FetchNotesParams {
   page: number;
-  perPage?: number;
+  limit?: number;
   search?: string;
   tag?: string;
+}
+
+export interface NotesResponse {
+  notes: Note[];
+  totalPages: number;
+  currentPage: number;
+  totalItems: number;
 }
 
 // Додатковий тип для тегів (якщо ви використовуєте суворий тип замість рядка string)

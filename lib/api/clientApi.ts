@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Note, FetchNotesParams } from "@/types/note";
+import type { Note, FetchNotesParams, NotesResponse } from "@/types/note";
 import type { User } from "@/types/user";
 
 export interface NewNoteData {
@@ -20,8 +20,10 @@ export interface UpdateUserData {
 /**
  * Нотатки (Notes) — Клієнтські запити
  */
-export async function fetchNotes(params: FetchNotesParams): Promise<Note[]> {
-  const { data } = await api.get<Note[]>("/notes", { params });
+export async function fetchNotes(
+  params: FetchNotesParams,
+): Promise<NotesResponse> {
+  const { data } = await api.get<NotesResponse>("/notes", { params });
   return data;
 }
 
