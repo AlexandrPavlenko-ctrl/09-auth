@@ -5,11 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as Record<string, string>;
 
-    const backendResponse = await fetch("https://notehub-api.goit.study", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const backendResponse = await fetch(
+      "https://notehub-api.goit.study/auth/register",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
 
     if (!backendResponse.ok) {
       const errorData = (await backendResponse.json()) as Record<

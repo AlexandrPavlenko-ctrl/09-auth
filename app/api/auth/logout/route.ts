@@ -5,10 +5,13 @@ export async function POST(request: NextRequest) {
   try {
     const cookieHeader = request.headers.get("cookie") || "";
 
-    const backendResponse = await fetch("https://notehub-api.goit.study", {
-      method: "POST",
-      headers: { Cookie: cookieHeader },
-    });
+    const backendResponse = await fetch(
+      "https://notehub-api.goit.study/auth/logout",
+      {
+        method: "POST",
+        headers: { Cookie: cookieHeader },
+      },
+    );
 
     const response = NextResponse.json({ success: true }, { status: 200 });
 

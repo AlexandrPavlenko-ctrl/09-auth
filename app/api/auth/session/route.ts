@@ -5,10 +5,13 @@ export async function GET(request: NextRequest) {
   try {
     const cookieHeader = request.headers.get("cookie") || "";
 
-    const backendResponse = await fetch("https://notehub-api.goit.study", {
-      method: "GET",
-      headers: { Cookie: cookieHeader },
-    });
+    const backendResponse = await fetch(
+      "https://notehub-api.goit.study/auth/session",
+      {
+        method: "GET",
+        headers: { Cookie: cookieHeader },
+      },
+    );
 
     if (backendResponse.status === 200) {
       const text = await backendResponse.text();
