@@ -1,8 +1,8 @@
 import React from "react";
 import { Metadata } from "next";
 import { Roboto } from "next/font/google";
-import { Header } from "@/components/Header/Header";
-import { Footer } from "@/components/Footer/Footer";
+import Header from "@/components/Header/Header";
+import Footer from "@/components/Footer/Footer";
 import ReactQueryProvider from "@/components/TanStackProvider/TanStackProvider"; // Імпортуємо створений провайдер
 import "./global.css";
 

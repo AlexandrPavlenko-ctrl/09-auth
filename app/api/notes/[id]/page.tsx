@@ -1,6 +1,6 @@
 import React from "react";
 import { Metadata } from "next";
-import { fetchNoteById } from "@/lib/api";
+import fetchNoteById from "@/lib/api/api";
 import { NoteDetailsClient } from "./NoteDetails.client"; // Перевірте шлях
 
 interface Props {
@@ -12,7 +12,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
   try {
-    const note = await fetchNoteById(id);
+    const response = await fetchNoteById(id);
+    const note = response.data || response;
     // Беремо перші 150 символів контенту для дескрипшену
     const shortDescription =
       note.content ?

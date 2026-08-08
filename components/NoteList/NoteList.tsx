@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link"; // Повертаємо Link для активації Intercepting Routes
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Note } from "../../types/note";
-import { deleteNoteApi } from "../../lib/api";
+import { deleteNoteApi } from "../../lib/api/api";
 import css from "./NoteList.module.css";
 
 interface NoteListProps {
