@@ -22,7 +22,7 @@ export default function NoteForm() {
   }>({});
 
   const mutation = useMutation({
-    mutationFn: createNoteApi,
+    mutationFn: createNote,
     onSuccess: () => {
       // 1. Інвалідуємо кеш нотаток за допомогою useQueryClient
       queryClient.invalidateQueries({ queryKey: ["notes"] });
