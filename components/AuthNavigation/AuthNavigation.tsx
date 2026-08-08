@@ -55,7 +55,7 @@ export default function AuthNavigation({
       // 3. Обновляем серверный рендер и выполняем редирект на страницу авторизации
       try {
         router.refresh();
-      } catch (e) {
+      } catch {
         // ignore if not supported
       }
       router.push("/sign-in");

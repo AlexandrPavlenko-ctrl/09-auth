@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logErrorResponse } from "../../utils/utils";
+import { logErrorResponse } from "../../_utils/utils";
 
 export async function POST(req: NextRequest) {
   try {
