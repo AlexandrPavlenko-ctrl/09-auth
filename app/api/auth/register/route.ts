@@ -26,11 +26,13 @@ export async function POST(request: NextRequest) {
     }
 
     const userData = await backendResponse.json();
-    const setCookieHeader = backendResponse.headers.get("set-cookie");
     const response = NextResponse.json(userData, { status: 201 });
 
-    if (setCookieHeader) {
-      response.headers.set("set-cookie", setCookieHeader);
+    const setCookieHeaders = backendResponse.headers.getSetCookie();
+    if (setCookieHeaders.length > 0) {
+      setCookieHeaders.forEach((cookie) => {
+        response.headers.append("set-cookie", cookie);
+      });
     }
 
     return response;

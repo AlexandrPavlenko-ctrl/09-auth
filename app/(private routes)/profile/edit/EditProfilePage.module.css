@@ -33,6 +33,61 @@
   margin: 0 auto 24px auto;
 }
 
+.avatarWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.changeAvatarButton {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 999px;
+  background-color: #0d6efd;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cropArea {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: move;
+}
+
+.avatarPreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cropFrame {
+  position: absolute;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cropControls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+  font-size: 14px;
+}
+
+.cropControls input {
+  width: 180px;
+}
+
 .profileInfo {
   font-size: 18px;
   color: #333;

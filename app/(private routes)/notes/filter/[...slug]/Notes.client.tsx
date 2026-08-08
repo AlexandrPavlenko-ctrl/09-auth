@@ -46,7 +46,7 @@ export default function NotesClient({ tag: currentTag }: NotesClientProps) {
         page,
         limit: 10,
         search: debouncedSearchQuery,
-        tag: currentTag,
+        tag: currentTag === "all" ? "" : currentTag,
       }),
   });
 

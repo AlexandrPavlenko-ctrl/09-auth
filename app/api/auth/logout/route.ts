@@ -15,11 +15,15 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ success: true }, { status: 200 });
 
-    // При логауте принудительно затираем куку в браузере клиента
-    response.headers.set(
-      "set-cookie",
+    const expiredCookies = [
       "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax",
-    );
+      "accessToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None",
+      "refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=None",
+    ];
+
+    response.headers.append("set-cookie", expiredCookies[0]);
+    response.headers.append("set-cookie", expiredCookies[1]);
+    response.headers.append("set-cookie", expiredCookies[2]);
 
     return response;
   } catch (error) {

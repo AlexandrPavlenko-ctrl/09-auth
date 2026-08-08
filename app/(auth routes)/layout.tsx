@@ -8,12 +8,16 @@ interface AuthLayoutProps {
 
 // КРИТИЧНО ДЛЯ NEXT.JS: Компонент обов'язково має бути експортований як default
 export default async function AuthLayout({ children }: AuthLayoutProps) {
-  // Зчитуємо сесійну куку з браузера користувача на серверній стороні
+  // Зчитуємо доступні куки авторизації з браузера користувача на серверній стороні
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("session");
+  const hasAuthCookie = Boolean(
+    cookieStore.get("session") ||
+    cookieStore.get("accessToken") ||
+    cookieStore.get("refreshToken"),
+  );
 
   // Якщо токен активний (користувач уже пройшов автентифікацію):
-  if (sessionToken) {
+  if (hasAuthCookie) {
     // Примусово перенаправляємо його на профіль
     redirect("/profile");
   }

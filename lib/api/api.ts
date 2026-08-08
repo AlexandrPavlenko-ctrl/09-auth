@@ -1,10 +1,20 @@
 import axios from "axios";
 
-// Используем чистый относительный путь. Браузер сам подставит текущий хост (localhost или Vercel)
-const baseURL = "/api";
+const getBaseURL = () => {
+  if (typeof window !== "undefined") {
+    return "/api";
+  }
+
+  const configuredOrigin =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "http://127.0.0.1:3000";
+
+  return new URL("/api", configuredOrigin).toString();
+};
 
 export const api = axios.create({
-  baseURL,
+  baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },

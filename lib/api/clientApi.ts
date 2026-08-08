@@ -15,6 +15,8 @@ export interface AuthCredentials {
 
 export interface UpdateUserData {
   username: string;
+  email?: string;
+  avatar?: string;
 }
 
 /**
@@ -73,4 +75,18 @@ export async function getMe(): Promise<User> {
 export async function updateMe(payload: UpdateUserData): Promise<User> {
   const { data } = await api.patch<User>("/users/me", payload);
   return data;
+}
+
+export async function uploadAvatar(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const { data } = await api.post<{ avatar: string }>("/users/me", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    withCredentials: true,
+  });
+
+  return data.avatar;
 }

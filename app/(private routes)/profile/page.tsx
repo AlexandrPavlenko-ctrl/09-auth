@@ -19,7 +19,27 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ProfilePage() {
-  const user = await getMe();
+  let user = null;
+
+  try {
+    user = await getMe();
+  } catch {
+    user = null;
+  }
+
+  const avatarSrc =
+    user?.avatar || "https://ac.goit.global/fullstack/react/default-avatar.jpg";
+
+  if (!user) {
+    return (
+      <main className={css.mainContent}>
+        <div className={css.profileCard}>
+          <h1 className={css.formTitle}>Profile Page</h1>
+          <p>Please sign in again to view your profile.</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={css.mainContent}>
@@ -32,7 +52,7 @@ export default async function ProfilePage() {
         </div>
         <div className={css.avatarWrapper}>
           <Image
-            src={user.avatar}
+            src={avatarSrc}
             alt="User Avatar"
             width={120}
             height={120}

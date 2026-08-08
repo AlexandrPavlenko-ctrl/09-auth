@@ -10,14 +10,15 @@ export async function GET(request: NextRequest) {
     const search = request.nextUrl.searchParams.get("search") ?? "";
     const page = Number(request.nextUrl.searchParams.get("page") ?? 1);
     const rawTag = request.nextUrl.searchParams.get("tag") ?? "";
-    const tag = rawTag === "All" ? "" : rawTag;
+
+    const normalizedTag = rawTag === "all" || rawTag === "All" ? "" : rawTag;
 
     const res = await api("/notes", {
       params: {
         ...(search !== "" && { search }),
         page,
         perPage: 12,
-        ...(tag && { tag }),
+        ...(normalizedTag && { tag: normalizedTag }),
       },
       headers: {
         Cookie: cookieStore.toString(),

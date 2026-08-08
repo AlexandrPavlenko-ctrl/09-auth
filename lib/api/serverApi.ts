@@ -40,6 +40,17 @@ export async function checkSession(): Promise<User | null> {
 
 export async function getMe(): Promise<User> {
   const config = await getServerConfig();
-  const { data } = await api.get<User>("/users/me", config);
-  return data;
+
+  try {
+    const { data } = await api.get<User>("/users/me", config);
+    return data;
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const response = (error as { response?: { status?: number } }).response;
+      if (response?.status === 401) {
+        throw new Error("Unauthorized");
+      }
+    }
+    throw error;
+  }
 }
