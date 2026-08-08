@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link"; // Повертаємо Link для активації Intercepting Routes
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Note } from "../../types/note";
-import { deleteNote } from "@/lib/api/clientApi";
+import { deleteNote as deleteNoteApi } from "@/lib/api/clientApi";
 import css from "./NoteList.module.css";
 
 interface NoteListProps {
@@ -15,7 +15,7 @@ export const NoteList: React.FC<NoteListProps> = ({ notes }) => {
   const queryClient = useQueryClient();
 
   const { mutate: deleteNote } = useMutation({
-    mutationFn: deleteNote,
+    mutationFn: deleteNoteApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
