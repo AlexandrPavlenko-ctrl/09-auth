@@ -7,7 +7,7 @@ const getBaseURL = () => {
   }
 
   // 2. На сервере Vercel бьем НАПРЯМУЮ по адресу бэкенда GoIT
-  return "https://goit.study";
+  return "https://notehub-api.goit.study";
 };
 
 export const api = axios.create({
