@@ -1,22 +1,36 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logout } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
+import type { User } from "@/types/user";
 
-export default function AuthNavigation() {
+export default function AuthNavigation({
+  initialUser,
+}: {
+  initialUser?: User | null;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   // Подписываемся на глобальный Zustand-стор авторизации
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const clearIsAuthenticated = useAuthStore(
     (state) => state.clearIsAuthenticated,
   );
+
+  // Hydrate client auth store from server-provided user
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+      queryClient.setQueryData(["session"], initialUser);
+    }
+  }, [initialUser, setUser, queryClient]);
 
   // Настройка мутации для безопасного выхода из системы
   const logoutMutation = useMutation({

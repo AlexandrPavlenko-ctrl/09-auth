@@ -1,8 +1,17 @@
 import Link from "next/link";
 import css from "./Header.module.css";
 import AuthNavigation from "../AuthNavigation/AuthNavigation";
+import { getMe } from "@/lib/api/serverApi";
+import type { User } from "@/types/user";
 
-export default function Header() {
+export default async function Header() {
+  let user: User | null = null;
+  try {
+    user = await getMe();
+  } catch {
+    user = null;
+  }
+
   return (
     <header className={css.header}>
       <Link href="/" aria-label="Home">
@@ -13,7 +22,7 @@ export default function Header() {
           <li>
             <Link href="/">Home</Link>
           </li>
-          <AuthNavigation />
+          <AuthNavigation initialUser={user} />
 
           <li>
             <Link href="/notes/filter/all">Notes</Link>
