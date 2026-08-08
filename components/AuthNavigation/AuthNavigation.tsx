@@ -26,10 +26,15 @@ export default function AuthNavigation({
 
   // Hydrate client auth store from server-provided user
   useEffect(() => {
-    if (initialUser) {
-      setUser(initialUser);
-      queryClient.setQueryData(["session"], initialUser);
+    if (initialUser === undefined) return;
+    if (initialUser === null) {
+      clearIsAuthenticated();
+      queryClient.setQueryData(["session"], null);
+      return;
     }
+
+    setUser(initialUser);
+    queryClient.setQueryData(["session"], initialUser);
   }, [initialUser, setUser, queryClient]);
 
   // Настройка мутации для безопасного выхода из системы
