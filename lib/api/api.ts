@@ -18,9 +18,8 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Включает работу с cookies сессий
+  withCredentials: true, // КРИТИЧЕСКИ ВАЖНО для ваших кук
 });
 
-// Добавляем экспорт старого имени для совместимости со всеми вашими файлами ДЗ
 export const nextServer = api;
 export default api;
