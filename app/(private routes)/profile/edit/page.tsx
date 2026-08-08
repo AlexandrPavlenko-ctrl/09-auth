@@ -3,19 +3,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
+import dynamic from "next/dynamic";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateMe, uploadAvatar } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import css from "./EditProfilePage.module.css";
 
-export default function EditProfilePage() {
+// Экспортируем как именованную функцию для динамического импорта ниже
+export function EditProfileComponent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0, width: 100, height: 100 });
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOriginCrop, setDragOriginCrop] = useState({ x: 0, y: 0 });
@@ -23,10 +27,8 @@ export default function EditProfilePage() {
 
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
-  const avatarSrc =
-    avatarPreview ||
-    user?.avatar ||
-    "https://ac.goit.global/fullstack/react/default-avatar.jpg";
+
+  const avatarSrc = avatarPreview || user?.avatar || "https://goit.global";
 
   const mutation = useMutation({
     mutationFn: updateMe,
@@ -93,7 +95,7 @@ export default function EditProfilePage() {
     );
 
     setCrop((prev) => ({ ...prev, x: nextX, y: nextY }));
-    setDragStart({ x: event.clientX, y: event.clientY });
+    // Переопределение setDragStart отсюда удалено для плавной и стабильной работы кропа
   };
 
   const handleCropMouseUp = () => setIsDragging(false);
@@ -103,8 +105,11 @@ export default function EditProfilePage() {
     setCrop((prev) => ({ ...prev, width: value, height: value }));
   };
 
-  const handleFormAction = async (formData: FormData) => {
+  const handleFormAction = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setError(null);
+
+    const formData = new FormData(e.currentTarget);
     const username = ((formData.get("username") as string) || "").trim();
 
     if (!username) {
@@ -148,22 +153,16 @@ export default function EditProfilePage() {
             else reject(new Error("Failed to create avatar image."));
           }, "image/png");
         });
+
         const avatarFile = new File([croppedBlob], "avatar.png", {
           type: "image/png",
         });
 
-        // 2. Вызываем функцию напрямую без метода .patch()
-        // Она сама отправит данные на сервер и вернет готовый URL строки
-        const uploadedAvatarUrl = await uploadAvatar(avatarFile);
-
-        console.log(
-          "Аватар успешно загружен, сервер вернул URL:",
-          uploadedAvatarUrl,
-        );
+        // Прямой вызов функции API GoIT без метода .patch()
+        await uploadAvatar(avatarFile);
       }
 
-      // 3. Отправляем в мутацию профиля СТРОГО разрешенные схемой поля.
-      // Поле 'avatar' удалено, ошибка 400 больше не повторится.
+      // Обновляем текстовые данные профиля (avatar сюда не передаем)
       mutation.mutate({
         username,
         email: user.email,
@@ -175,117 +174,121 @@ export default function EditProfilePage() {
     }
   };
 
-  if (!user)
+  // Компонент загружается строго на клиенте, поэтому проверка безопасна
+  if (!user) {
     return (
       <div style={{ textAlign: "center", padding: "40px" }}>Loading...</div>
     );
+  }
 
   return (
     <main className={css.mainContent}>
       <div className={css.profileCard}>
         <h1 className={css.formTitle}>Edit Profile</h1>
-        <div className={css.avatarWrapper}>
-          {avatarPreview ?
-            <div
-              ref={cropAreaRef}
-              className={css.cropArea}
-              onMouseDown={handleCropMouseDown}
-              onMouseMove={handleCropMouseMove}
-              onMouseUp={handleCropMouseUp}
-              onMouseLeave={handleCropMouseUp}
-            >
-              <NextImage
+
+        <form onSubmit={handleFormAction} className={css.formStructure}>
+          <div className={css.avatarWrapper}>
+            {avatarPreview ?
+              <div
+                ref={cropAreaRef}
+                className={css.cropArea}
+                onMouseDown={handleCropMouseDown}
+                onMouseMove={handleCropMouseMove}
+                onMouseUp={handleCropMouseUp}
+                onMouseLeave={handleCropMouseUp}
+              >
+                <NextImage
+                  src={avatarSrc}
+                  alt="User Avatar"
+                  width={240}
+                  height={240}
+                  className={css.avatarPreview}
+                  priority
+                />
+                <div
+                  className={css.cropFrame}
+                  style={{
+                    left: `${crop.x}%`,
+                    top: `${crop.y}%`,
+                    width: `${crop.width}%`,
+                    height: `${crop.height}%`,
+                  }}
+                />
+              </div>
+            : <NextImage
                 src={avatarSrc}
                 alt="User Avatar"
-                width={240}
-                height={240}
-                className={css.avatarPreview}
+                width={120}
+                height={120}
+                className={css.avatar}
                 priority
-                onLoad={(event) => {
-                  const target = event.currentTarget;
-                  if (target.naturalWidth > 0 && target.naturalHeight > 0) {
-                    // keep crop preview responsive without additional state
-                  }
-                }}
               />
-              <div
-                className={css.cropFrame}
-                style={{
-                  left: `${crop.x}%`,
-                  top: `${crop.y}%`,
-                  width: `${crop.width}%`,
-                  height: `${crop.height}%`,
-                }}
-              />
-            </div>
-          : <NextImage
-              src={avatarSrc}
-              alt="User Avatar"
-              width={120}
-              height={120}
-              className={css.avatar}
-              priority
-            />
-          }
-          <button
-            type="button"
-            className={css.changeAvatarButton}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Change avatar
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={handleAvatarPick}
-          />
-          {avatarPreview && (
-            <div className={css.cropControls}>
-              <label htmlFor="crop-size">Crop size</label>
-              <input
-                id="crop-size"
-                type="range"
-                min="20"
-                max="100"
-                value={crop.width}
-                onChange={handleCropChange}
-              />
-            </div>
-          )}
-        </div>
-        <form action={handleFormAction} className={css.profileInfo}>
-          <div className={css.usernameWrapper}>
-            <label htmlFor="username">Username:</label>
-            <input
-              id="username"
-              type="text"
-              name="username"
-              className={css.input}
-              defaultValue={user.username}
-            />
-          </div>
-          <p>Email: {user.email}</p>
-          <div className={css.actions}>
-            <button
-              type="submit"
-              className={css.saveButton}
-              disabled={mutation.isPending}
-            >
-              Save
-            </button>
+            }
+
             <button
               type="button"
-              className={css.cancelButton}
-              onClick={() => router.push("/profile")}
+              className={css.changeAvatarButton}
+              onClick={() => fileInputRef.current?.click()}
             >
-              Cancel
+              Change avatar
             </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleAvatarPick}
+            />
+
+            {avatarPreview && (
+              <div className={css.cropControls}>
+                <label htmlFor="crop-size">Crop size</label>
+                <input
+                  id="crop-size"
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={crop.width}
+                  onChange={handleCropChange}
+                />
+              </div>
+            )}
           </div>
-          {error && <p className={css.error}>{error}</p>}
+
+          <div className={css.inputGroup}>
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              defaultValue={user.username}
+              className={css.inputField}
+            />
+          </div>
+
+          <button
+            type="submit"
+            className={css.saveButton}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? "Saving..." : "Save Changes"}
+          </button>
         </form>
+
+        {error && <p className={css.errorMessage}>{error}</p>}
       </div>
     </main>
   );
 }
+
+// Отключаем SSR (серверный рендеринг) для всей страницы,
+// чтобы полностью избежать конфликтов гидратации и ошибок синхронного setState
+const EditProfilePageNoSSR = dynamic(
+  async () => {
+    return EditProfileComponent;
+  },
+  { ssr: false },
+);
+
+export default EditProfilePageNoSSR;
