@@ -1,71 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { login } from "@/lib/api/clientApi";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import { login, checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import css from "./SignInPage.module.css";
 
-function getErrorMessage(error: unknown): string {
-  const maybeApiError = error as { response?: { data?: unknown } };
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    typeof maybeApiError.response === "object" &&
-    maybeApiError.response !== null
-  ) {
-    const maybeResponseData = maybeApiError.response.data as
-      | { message?: unknown }
-      | undefined;
-    if (
-      typeof maybeResponseData === "object" &&
-      maybeResponseData !== null &&
-      typeof maybeResponseData.message === "string"
-    ) {
-      return maybeResponseData.message;
-    }
-  }
-
-  return "Invalid email or password.";
-}
-
-export default function SignInPage() {
+export default function SignIn() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
   const setUser = useAuthStore((state) => state.setUser);
+  const [error, setError] = useState("");
 
-  const mutation = useMutation({
-    mutationFn: login,
-    onSuccess: (userData) => {
-      setUser(userData);
-      queryClient.invalidateQueries({ queryKey: ["session"] });
-      router.push("/profile");
-    },
-    onError: (err: unknown) => {
-      setError(getErrorMessage(err));
-    },
+  const { data: session } = useQuery({
+    queryKey: ["session"],
+    queryFn: checkSession,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    const formData = new FormData(event.currentTarget);
-    const email = ((formData.get("email") as string) || "").trim();
-    const password = ((formData.get("password") as string) || "").trim();
-
-    if (!email || !password) {
-      setError("All fields are required.");
-      return;
+  useEffect(() => {
+    if (session && typeof session !== "boolean") {
+      router.replace("/profile");
     }
-    mutation.mutate({ email, password });
+  }, [session, router]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    const formData = new FormData(event.currentTarget as HTMLFormElement);
+    try {
+      const credentials = {
+        email: (formData.get("email") as string) || "",
+        password: (formData.get("password") as string) || "",
+      };
+      const user = await login(credentials);
+      setUser(user);
+      router.push("/profile");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error ?? "Login failed");
+      } else {
+        setError("Login failed");
+      }
+    }
   };
 
   return (
     <main className={css.mainContent}>
-      <form onSubmit={handleSubmit} className={css.form}>
+      <form className={css.form} onSubmit={handleSubmit}>
         <h1 className={css.formTitle}>Sign in</h1>
+
         <div className={css.formGroup}>
           <label htmlFor="email">Email</label>
           <input
@@ -73,9 +59,11 @@ export default function SignInPage() {
             type="email"
             name="email"
             className={css.input}
+            autoComplete="email"
             required
           />
         </div>
+
         <div className={css.formGroup}>
           <label htmlFor="password">Password</label>
           <input
@@ -83,18 +71,17 @@ export default function SignInPage() {
             type="password"
             name="password"
             className={css.input}
+            autoComplete="current-password"
             required
           />
         </div>
+
         <div className={css.actions}>
-          <button
-            type="submit"
-            className={css.submitButton}
-            disabled={mutation.isPending}
-          >
+          <button type="submit" className={css.submitButton}>
             Log in
           </button>
         </div>
+
         {error && <p className={css.error}>{error}</p>}
       </form>
     </main>

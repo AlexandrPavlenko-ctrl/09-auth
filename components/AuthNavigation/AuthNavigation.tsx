@@ -52,7 +52,12 @@ export default function AuthNavigation({
       queryClient.setQueryData(["session"], null);
       queryClient.invalidateQueries({ queryKey: ["session"] });
 
-      // 3. Выполняем нативный редирект на страницу авторизации
+      // 3. Обновляем серверный рендер и выполняем редирект на страницу авторизации
+      try {
+        router.refresh();
+      } catch (e) {
+        // ignore if not supported
+      }
       router.push("/sign-in");
     },
     onError: (err) => {
