@@ -28,7 +28,8 @@ export function EditProfileComponent() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
-  const avatarSrc = avatarPreview || user?.avatar || "https://goit.global";
+  const avatarSrc =
+    avatarPreview || user?.avatar || "https://notehub-api.goit.study";
 
   const mutation = useMutation({
     mutationFn: updateMe,
