@@ -14,8 +14,8 @@ export default async function AuthLayout({ children }: AuthLayoutProps) {
 
   // Якщо токен активний (користувач уже пройшов автентифікацію):
   if (sessionToken) {
-    // Примусово перенаправляємо його на головну сторінку з нотатками
-    redirect("/notes/filter/all");
+    // Примусово перенаправляємо його на профіль
+    redirect("/profile");
   }
 
   // Якщо куки немає — дозволяємо рендерити сторінки /sign-in або /sign-up

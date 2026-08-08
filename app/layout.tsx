@@ -4,6 +4,7 @@ import { Roboto } from "next/font/google";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
 import ReactQueryProvider from "@/components/TanStackProvider/TanStackProvider"; // Імпортуємо створений провайдер
+import AuthProvider from "@/components/AuthProvider/AuthProvider";
 import "./global.css";
 
 const roboto = Roboto({
@@ -49,10 +50,12 @@ export default function RootLayout({ children, modal }: RootLayoutProps) {
       <body className={roboto.className}>
         {/* Глобальний провайдер React Query для всіх сторінок сайту */}
         <ReactQueryProvider>
-          <Header />
-          {children}
-          {modal}
-          <Footer />
+          <AuthProvider>
+            <Header />
+            {children}
+            {modal}
+            <Footer />
+          </AuthProvider>
         </ReactQueryProvider>
 
         <div id="modal-root" />
