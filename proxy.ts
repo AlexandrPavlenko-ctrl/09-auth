@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 const privateRoutes = ["/profile", "/notes"];
 const publicRoutes = ["/sign-in", "/sign-up"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Зчитуємо токен сесії з cookies браузера користувача на серверній стороні
