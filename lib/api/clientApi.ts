@@ -85,7 +85,6 @@ export async function uploadAvatar(file: File): Promise<string> {
     headers: {
       "Content-Type": "multipart/form-data",
     },
-    withCredentials: true,
   });
 
   return data.avatar;
