@@ -3,8 +3,8 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { logout } from "@/lib/api/clientApi";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { logout, checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import type { User } from "@/types/user";
 
@@ -24,18 +24,22 @@ export default function AuthNavigation({
     (state) => state.clearIsAuthenticated,
   );
 
-  // Hydrate client auth store from server-provided user
-  useEffect(() => {
-    if (initialUser === undefined) return;
-    if (initialUser === null) {
-      clearIsAuthenticated();
-      queryClient.setQueryData(["session"], null);
-      return;
-    }
+  // Keep Zustand in sync with server session via React Query
+  const { data: session } = useQuery({
+    queryKey: ["session"],
+    queryFn: checkSession,
+    initialData: initialUser === undefined ? undefined : initialUser,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
-    setUser(initialUser);
-    queryClient.setQueryData(["session"], initialUser);
-  }, [initialUser, setUser, queryClient]);
+  useEffect(() => {
+    if (session && typeof session !== "boolean") {
+      setUser(session);
+    } else {
+      clearIsAuthenticated();
+    }
+  }, [session, setUser, clearIsAuthenticated]);
 
   // Настройка мутации для безопасного выхода из системы
   const logoutMutation = useMutation({
