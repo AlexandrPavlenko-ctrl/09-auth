@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { fetchNoteById } from "@/lib/api/api";
+import { fetchNoteById } from "@/lib/api/clientApi";
 
 // 1. ВИПРАВЛЕНО: Замість прямого імпорту використовуємо динамічний імпорт Next.js
 import dynamic from "next/dynamic";

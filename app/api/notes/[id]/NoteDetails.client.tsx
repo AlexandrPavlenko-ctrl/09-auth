@@ -3,7 +3,7 @@
 import React from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import fetchNoteById from "../../../../lib/api/api";
+import { fetchNoteById } from "@/lib/api/clientApi";
 import css from "./NoteDetails.module.css";
 
 export const NoteDetailsClient: React.FC = () => {
@@ -16,10 +16,7 @@ export const NoteDetailsClient: React.FC = () => {
     isError,
   } = useQuery({
     queryKey: ["note", id],
-    queryFn: async () => {
-      const response = await fetchNoteById(id);
-      return response.data;
-    },
+    queryFn: () => fetchNoteById(id),
     enabled: !!id,
     refetchOnMount: false,
   });
