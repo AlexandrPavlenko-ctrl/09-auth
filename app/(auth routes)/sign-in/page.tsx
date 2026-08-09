@@ -3,18 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { login, checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import type { User } from "@/types/user";
 import css from "./SignInPage.module.css";
 
+// Строгий интерфейс для ответа Axios, чтобы избежать any
 interface AxiosSessionResponse {
   data: User;
 }
 
 export default function SignIn() {
   const router = useRouter();
+
+  // ИСПРАВЛЕНО: Добавлена инициализация queryClient для сброса кэша TanStack Query
+  const queryClient = useQueryClient();
+
   const setUser = useAuthStore((state) => state.setUser);
   const [error, setError] = useState("");
 
@@ -26,14 +31,14 @@ export default function SignIn() {
   });
 
   useEffect(() => {
-    // ИСПРАВЛЕНО: Реагируем только если запрос завершился успешным статусом 200 OK
+    // Реагируем только если запрос завершился успешным статусом 200 OK
     if (isSuccess && session && typeof session !== "boolean") {
       const response = session as unknown as AxiosSessionResponse;
       const userData =
         response.data ? response.data : (session as unknown as User);
 
-      // ИСПРАВЛЕНО: Перенаправляем на главную ТОЛЬКО если в ответе есть реальный email залогиненного юзера.
-      // Если бэкенд вернул 401 ошибку или пустой объект — этот блок игнорируется, и форма откроется!
+      // Перенаправляем на главную ТОЛЬКО если в ответе есть реальный email залогиненного юзера.
+      // Если бэкенд вернул 401 ошибку — этот блок игнорируется, и форма откроется.
       if (
         userData &&
         typeof userData === "object" &&
@@ -58,8 +63,12 @@ export default function SignIn() {
       const user = await login(credentials);
       setUser(user);
 
-      // После успешного входа перенаправляем строго на главную страницу (/) по ТЗ ментора
-      router.push("/");
+      // Принудительно очищаем кэш сессии в React Query перед переходом
+      queryClient.invalidateQueries({ queryKey: ["session"] });
+
+      // ИСПРАВЛЕНО: Использование window.location.href гарантирует запись кук бэкенда.
+      // Направляем пользователя строго на главную страницу (/) в соответствии с ТЗ ментора.
+      window.location.href = "/";
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const serverMessage =

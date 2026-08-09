@@ -1,16 +1,12 @@
 import Link from "next/link";
 import css from "./Header.module.css";
 import AuthNavigation from "../AuthNavigation/AuthNavigation";
-import { getMe } from "@/lib/api/serverApi";
-import type { User } from "@/types/user";
+
+// ИСПРАВЛЕНО: Удалены неиспользуемые импорты getMe и типа User
 
 export default async function Header() {
-  let user: User | null = null;
-  try {
-    user = await getMe();
-  } catch {
-    user = null;
-  }
+  // ИСПРАВЛЕНО: Полностью удален блок инициализации let user = null и try-catch,
+  // так как AuthNavigation теперь работает автономно на клиенте через TanStack Query
 
   return (
     <header className={css.header}>
@@ -22,7 +18,9 @@ export default async function Header() {
           <li>
             <Link href="/">Home</Link>
           </li>
-          <AuthNavigation initialUser={user} />
+
+          {/* Автономный клиентский компонент без лишних пропсов */}
+          <AuthNavigation />
 
           <li>
             <Link href="/notes/filter/all">Notes</Link>

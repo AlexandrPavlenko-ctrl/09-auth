@@ -62,3 +62,7 @@ export async function fetchNoteById(id: string): Promise<Note> {
 
   return data;
 }
+
+// ДОБАВЛЕНО ДЛЯ СОВМЕСТИМОСТИ: экспортируем функцию под обоими именами,
+// чтобы proxy.ts вашего коллеги не упал, если он ищет checkServerSession
+export { checkSession as checkServerSession };
