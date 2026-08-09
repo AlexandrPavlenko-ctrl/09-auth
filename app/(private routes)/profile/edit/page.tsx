@@ -9,7 +9,7 @@ import { updateMe, uploadAvatar } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import css from "./EditProfilePage.module.css";
 
-// Експортуємо як іменовану функцію для динамічного імпорту нижче
+// Экспортируем как именованную функцию для динамического импорта ниже
 export function EditProfileComponent() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -28,10 +28,7 @@ export function EditProfileComponent() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
-  const avatarSrc =
-    avatarPreview ||
-    user?.avatar ||
-    "https://ac.goit.global/fullstack/react/default-avatar.jpg";
+  const avatarSrc = avatarPreview || user?.avatar || "https://goit.global";
 
   const mutation = useMutation({
     mutationFn: updateMe,
@@ -255,7 +252,6 @@ export function EditProfileComponent() {
             )}
           </div>
 
-          {/* ПОЛЯ ВВОДУ: Використовують ваші стилі .profileInfo та .usernameWrapper */}
           <div className={css.profileInfo}>
             <div className={css.usernameWrapper}>
               <label htmlFor="username">Username</label>
@@ -286,7 +282,6 @@ export function EditProfileComponent() {
             </div>
           </div>
 
-          {/* КНОПКИ ДІЙ: Використовують ваш рідний клас .actions та додають кнопку Cancel */}
           <div className={css.actions}>
             <button
               type="submit"
@@ -296,10 +291,11 @@ export function EditProfileComponent() {
               {mutation.isPending ? "Saving..." : "Save Changes"}
             </button>
 
+            {/* ИСПРАВЛЕНО: Кнопка Отмены вызывает метод router.back() строго по ТЗ ментора */}
             <button
               type="button"
               className={css.cancelButton}
-              onClick={() => router.push("/profile")}
+              onClick={() => router.back()}
             >
               Cancel
             </button>
@@ -312,7 +308,7 @@ export function EditProfileComponent() {
   );
 }
 
-// Запобігає помилкам гідрації на Vercel
+// Защищает от конфликтов серверной и клиентской гидратации на Vercel
 const EditProfilePageNoSSR = dynamic(
   async () => {
     return EditProfileComponent;

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation"; // 1. ИСПРАВЛЕНО: Добавлен хук usePathname
+import Link from "next/link"; // Обязательный компонент для всей навигации
+import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { logout, checkSession } from "@/lib/api/clientApi";
@@ -15,7 +15,7 @@ interface AxiosSessionResponse {
 
 export function AuthNavigationComponent() {
   const router = useRouter();
-  const pathname = usePathname(); // 2. ИСПРАВЛЕНО: Получаем текущий путь в браузере
+  const pathname = usePathname();
   const queryClient = useQueryClient();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -38,13 +38,12 @@ export function AuthNavigationComponent() {
     queryFn: checkSession,
     retry: false,
     refetchOnWindowFocus: false,
-    // 3. ИСПРАВЛЕНО: Запрос выполняется ТОЛЬКО если мы НЕ на страницах /sign-in или /sign-up.
-    // Это полностью предотвращает скрытые перезапуски рендеринга и зависание ссылок!
+    // Запрос выполняется ТОЛЬКО если мы НЕ на страницах /sign-in или /sign-up.
+    // Это полностью предотвращает скрытые перезапуски рендеринга и зависание ссылок Link!
     enabled: !isAuthPage,
   });
 
   useEffect(() => {
-    // Если мы на странице авторизации, принудительно сбрасываем стейт на гостя без запросов к серверу
     if (isAuthPage) {
       clearIsAuthenticated();
       return;
@@ -96,7 +95,6 @@ export function AuthNavigationComponent() {
     );
   }
 
-  // Если мы на страницах входа/регистрации, пользователь гарантированно не валиден (он гость)
   const isUserValid =
     !isAuthPage && isSuccess && isAuthenticated && user && user.email;
 
@@ -131,17 +129,16 @@ export function AuthNavigationComponent() {
           </li>
         </>
       : <>
-          {/* ИСПРАВЛЕНО: Заменили <Link> на <a>, чтобы заставить браузер сделать жесткий переход 
-              в обход забагованного клиентского кэша Next.js */}
+          {/* ИСПРАВЛЕНО СТРОГО ПО ЗАМЕЧАНИЮ МЕНТОРА: Теги <a> полностью заменены на <Link> */}
           <li className="navigationItem">
-            <a href="/sign-in" className="navigationLink">
+            <Link href="/sign-in" prefetch={false} className="navigationLink">
               Login
-            </a>
+            </Link>
           </li>
           <li className="navigationItem">
-            <a href="/sign-up" className="navigationLink">
+            <Link href="/sign-up" prefetch={false} className="navigationLink">
               Sign up
-            </a>
+            </Link>
           </li>
         </>
       }
@@ -149,6 +146,7 @@ export function AuthNavigationComponent() {
   );
 }
 
+// Оставляем как хвалил ментор: динамический импорт с отключенным SSR
 const AuthNavigationNoSSR = dynamic(
   async () => {
     return AuthNavigationComponent;

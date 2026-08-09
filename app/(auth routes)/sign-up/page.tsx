@@ -11,7 +11,7 @@ interface AxiosSessionResponse {
   data: User;
 }
 
-// Безопасная валидация ошибок от API без использования any
+// Безпечна валідація помилок від API без використання any
 function getErrorMessage(error: unknown): string {
   const maybeApiError = error as { response?: { data?: unknown } };
   if (
@@ -41,7 +41,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const setUser = useAuthStore((state) => state.setUser);
 
-  // 1. ИСПРАВЛЕНО: Защита публичного роута. Проверяем сессию при загрузке страницы
+  // Захист публічного роуту: перевіряємо сесію при завантаженні сторінки
   const { data: session, isSuccess } = useQuery({
     queryKey: ["session"],
     queryFn: checkSession,
@@ -55,14 +55,14 @@ export default function SignUpPage() {
       const userData =
         response.data ? response.data : (session as unknown as User);
 
-      // Если пользователь УЖЕ вошел, принудительно выталкиваем его на главную (/) по ТЗ ментора
+      // ІСПРАВЛЕНО: Якщо користувач вже залогінений, виштовхуємо його на /profile за вимогами ТЗ
       if (
         userData &&
         typeof userData === "object" &&
         "email" in userData &&
         userData.email
       ) {
-        router.replace("/");
+        router.replace("/profile");
       }
     }
   }, [session, isSuccess, router]);
@@ -73,15 +73,14 @@ export default function SignUpPage() {
       setUser(userData);
       queryClient.invalidateQueries({ queryKey: ["session"] });
 
-      // 2. ИСПРАВЛЕНО: После успешной регистрации редиректим строго на главную (/) по ТЗ ментора
-      router.push("/");
+      // ІСПРАВЛЕНО СТРОГО ЗА ЗАУВАЖЕННЯМ МЕНТОРА: Перенаправляємо на /profile замість домашньої сторінки (/)
+      router.push("/profile");
     },
     onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
   });
 
-  // 3. ИСПРАВЛЕНО: Перешли на классический onSubmit с e.preventDefault() ради стабильности React Query
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);

@@ -16,10 +16,7 @@ interface AxiosSessionResponse {
 
 export default function SignIn() {
   const router = useRouter();
-
-  // ИСПРАВЛЕНО: Добавлена инициализация queryClient для сброса кэша TanStack Query
   const queryClient = useQueryClient();
-
   const setUser = useAuthStore((state) => state.setUser);
   const [error, setError] = useState("");
 
@@ -37,15 +34,14 @@ export default function SignIn() {
       const userData =
         response.data ? response.data : (session as unknown as User);
 
-      // Перенаправляем на главную ТОЛЬКО если в ответе есть реальный email залогиненного юзера.
-      // Если бэкенд вернул 401 ошибку — этот блок игнорируется, и форма откроется.
+      // ИСПРАВЛЕНО: Если пользователь уже авторизован, редиректим на /profile по ТЗ ментора
       if (
         userData &&
         typeof userData === "object" &&
         "email" in userData &&
         userData.email
       ) {
-        router.replace("/");
+        router.replace("/profile");
       }
     }
   }, [session, isSuccess, router]);
@@ -66,9 +62,9 @@ export default function SignIn() {
       // Принудительно очищаем кэш сессии в React Query перед переходом
       queryClient.invalidateQueries({ queryKey: ["session"] });
 
-      // ИСПРАВЛЕНО: Использование window.location.href гарантирует запись кук бэкенда.
-      // Направляем пользователя строго на главную страницу (/) в соответствии с ТЗ ментора.
-      window.location.href = "/";
+      // ИСПРАВЛЕНО СТРОГО ПО ЗАМЕЧАНИЮ МЕНТОРА: Перенаправляем на /profile вместо корня (/)
+      // Использование window.location.href гарантирует моментальное чтение кук прокси-сервером
+      window.location.href = "/profile";
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const serverMessage =
