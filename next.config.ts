@@ -1,21 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 1. Разрешаем Next.js загружать аватарки от GoIT
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "ac.goit.global",
-        port: "",
-        pathname: "/**", // Разрешаем любые пути на этом домене
+        pathname: "/**",
       },
     ],
   },
 
-  // 2. Ваше существующее проксирование запросов для CORS
+  // ІСПРАВЛЕНО: Проксі налаштовано так, щоб воно не перехоплювало стандартні сторінки Next.js
   async rewrites() {
     return [
       {
+        // Перенаправляємо на бекенд GoIT ТІЛЬКИ ті запити, які йдуть на /api/...
         source: "/api/:path*",
         destination: "https://goit.study*",
       },

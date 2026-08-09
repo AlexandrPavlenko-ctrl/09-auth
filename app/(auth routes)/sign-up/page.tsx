@@ -1,10 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { register } from "@/lib/api/clientApi";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { register, checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
+import type { User } from "@/types/user";
+
+interface AxiosSessionResponse {
+  data: User;
+}
 
 // Безопасная валидация ошибок от API без использования any
 function getErrorMessage(error: unknown): string {
@@ -30,27 +35,58 @@ function getErrorMessage(error: unknown): string {
   return "Registration failed. Please check your data.";
 }
 
-// КРИТИЧЕСКИ ВАЖНО ДЛЯ ИСПРАВЛЕНИЯ ОШИБКИ: export default перед функцией
 export default function SignUpPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const setUser = useAuthStore((state) => state.setUser);
 
+  // 1. ИСПРАВЛЕНО: Защита публичного роута. Проверяем сессию при загрузке страницы
+  const { data: session, isSuccess } = useQuery({
+    queryKey: ["session"],
+    queryFn: checkSession,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (isSuccess && session && typeof session !== "boolean") {
+      const response = session as unknown as AxiosSessionResponse;
+      const userData =
+        response.data ? response.data : (session as unknown as User);
+
+      // Если пользователь УЖЕ вошел, принудительно выталкиваем его на главную (/) по ТЗ ментора
+      if (
+        userData &&
+        typeof userData === "object" &&
+        "email" in userData &&
+        userData.email
+      ) {
+        router.replace("/");
+      }
+    }
+  }, [session, isSuccess, router]);
+
   const mutation = useMutation({
     mutationFn: register,
     onSuccess: (userData) => {
       setUser(userData);
       queryClient.invalidateQueries({ queryKey: ["session"] });
-      router.push("/profile");
+
+      // 2. ИСПРАВЛЕНО: После успешной регистрации редиректим строго на главную (/) по ТЗ ментора
+      router.push("/");
     },
     onError: (err: unknown) => {
       setError(getErrorMessage(err));
     },
   });
 
-  const handleFormAction = (formData: FormData) => {
+  // 3. ИСПРАВЛЕНО: Перешли на классический onSubmit с e.preventDefault() ради стабильности React Query
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError(null);
+
+    const formData = new FormData(event.currentTarget);
     const email = ((formData.get("email") as string) || "").trim();
     const password = ((formData.get("password") as string) || "").trim();
 
@@ -64,7 +100,8 @@ export default function SignUpPage() {
   return (
     <main className="mainContent">
       <h1 className="formTitle">Sign up</h1>
-      <form action={handleFormAction} className="form">
+
+      <form onSubmit={handleSubmit} className="form">
         <div className="formGroup">
           <label htmlFor="email">Email</label>
           <input
@@ -93,7 +130,7 @@ export default function SignUpPage() {
             className="submitButton"
             disabled={mutation.isPending}
           >
-            Register
+            {mutation.isPending ? "Registering..." : "Register"}
           </button>
         </div>
 

@@ -1,56 +1,64 @@
 import { cookies } from "next/headers";
-import { api } from "./api";
-import type { Note, FetchNotesParams } from "@/types/note";
+import { api } from "./api"; // Если в проекте инстанс экспортируется как nextServer, замените на: import { nextServer as api } from "./api";
 import type { User } from "@/types/user";
+import type { Note } from "@/types/note"; // Импортируем интерфейс Note из ваших модулей
+import type { AxiosResponse } from "axios";
 
-const getServerConfig = async () => {
+/**
+ * Серверна функція перевірки сесії для proxy.ts
+ * ІСПРАВЛЕНО: Використовує Axios та повертає ПОВНИЙ об'єкт відповіді AxiosResponse, як вимагає ТЗ
+ */
+export async function checkSession(): Promise<AxiosResponse<User>> {
   const cookieStore = await cookies();
-  const allCookies = cookieStore.getAll();
-  const cookieHeader = allCookies.map((c) => `${c.name}=${c.value}`).join("; ");
+  const rawCookies = cookieStore.toString();
 
-  return {
+  // Робимо запит через ваш екземпляр Axios.
+  // Передаємо зчитані з утиліти cookies() значення в заголовок Cookie.
+  const response = await api.get<User>("/auth/session", {
     headers: {
-      Cookie: cookieHeader,
+      Cookie: rawCookies,
     },
-  };
-};
+  });
 
-export async function fetchNotes(params: FetchNotesParams): Promise<Note[]> {
-  const config = await getServerConfig();
-  const { data } = await api.get<Note[]>("/notes", { ...config, params });
-  return data;
+  // Повертаємо чистий повний об'єкт AxiosResponse (містить status, headers, data тощо)
+  return response;
 }
 
-export async function fetchNoteById(id: string): Promise<Note> {
-  const config = await getServerConfig();
-  const { data } = await api.get<Note>(`/notes/${id}`, config);
-  return data;
-}
-
-export async function checkSession(): Promise<User | null> {
-  const config = await getServerConfig();
+/**
+ * Отримання поточного профілю користувача
+ */
+export async function getMe(): Promise<User> {
   try {
-    const { data } = await api.get<User | "">("/auth/session", config);
-    if (data === "") return null;
+    const cookieStore = await cookies();
+    const rawCookies = cookieStore.toString();
+
+    const { data } = await api.get<User>("/users/me", {
+      headers: {
+        Cookie: rawCookies,
+      },
+    });
+
     return data;
   } catch {
-    return null;
+    // Зрозуміла обробка помилок із змістовним повідомленням при неавторизованому доступі
+    throw new Error("Unauthorized access to user profile. Please log in.");
   }
 }
 
-export async function getMe(): Promise<User> {
-  const config = await getServerConfig();
+/**
+ * Отримання нотатки за її ідентифікатором
+ * ІСПРАВЛЕНО: Тип any повністю замінено на інтерфейс Note
+ */
+export async function fetchNoteById(id: string): Promise<Note> {
+  const cookieStore = await cookies();
+  const rawCookies = cookieStore.toString();
 
-  try {
-    const { data } = await api.get<User>("/users/me", config);
-    return data;
-  } catch (error) {
-    if (typeof error === "object" && error !== null && "response" in error) {
-      const response = (error as { response?: { status?: number } }).response;
-      if (response?.status === 401) {
-        throw new Error("Unauthorized");
-      }
-    }
-    throw error;
-  }
+  // Повертає нотатку безпосередньо з даних відповіді
+  const { data } = await api.get<Note>(`/notes/${id}`, {
+    headers: {
+      Cookie: rawCookies,
+    },
+  });
+
+  return data;
 }

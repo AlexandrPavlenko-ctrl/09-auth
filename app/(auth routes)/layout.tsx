@@ -1,27 +1,34 @@
-import React from "react";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
+
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/authStore";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
 
-// КРИТИЧНО ДЛЯ NEXT.JS: Компонент обов'язково має бути експортований як default
-export default async function AuthLayout({ children }: AuthLayoutProps) {
-  // Зчитуємо доступні куки авторизації з браузера користувача на серверній стороні
-  const cookieStore = await cookies();
-  const hasAuthCookie = Boolean(
-    cookieStore.get("session") ||
-    cookieStore.get("accessToken") ||
-    cookieStore.get("refreshToken"),
-  );
+/**
+ * Клієнтський лейаут для автентифікаційних маршрутів (login / register)
+ */
+export default function AuthLayout({ children }: AuthLayoutProps) {
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
 
-  // Якщо токен активний (користувач уже пройшов автентифікацію):
-  if (hasAuthCookie) {
-    // Примусово перенаправляємо його на профіль
-    redirect("/profile");
+  useEffect(() => {
+    // Якщо користувач вже залогінений, виштовхуємо його на головну сторінку
+    if (user) {
+      // Обов'язковий виклик для оновлення серверних даних та кук за специфікацією ДЗ
+      router.refresh();
+      router.push("/");
+    }
+  }, [user, router]);
+
+  // Якщо користувач залогінений, повертаємо null (поки спрацьовує редірект),
+  // інакше рендеримо дочірні сторінки входу/реєстрації
+  if (user) {
+    return null;
   }
 
-  // Якщо куки немає — дозволяємо рендерити сторінки /sign-in або /sign-up
   return <>{children}</>;
 }

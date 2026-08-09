@@ -1,44 +1,26 @@
 "use client";
 
-import React from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { fetchNoteById } from "@/lib/api/clientApi";
-import css from "./NoteDetails.module.css";
+import { fetchNoteById } from "@/lib/api/clientApi"; // На клиенте вызываем КЛИЕНТСКИЙ апи
 
-export const NoteDetailsClient: React.FC = () => {
-  const params = useParams();
-  const id = params?.id as string;
+export function NoteDetailsClient() {
+  // Автоматически достаем id из параметров строки URL
+  const params = useParams<{ id: string }>();
+  const id = params.id;
 
-  const {
-    data: note,
-    isLoading,
-    isError,
-  } = useQuery({
+  // Хук подхватит данные из HydrationBoundary сервера, так как queryKey СОВПАДАЕТ
+  const { data: note, isLoading } = useQuery({
     queryKey: ["note", id],
     queryFn: () => fetchNoteById(id),
-    enabled: !!id,
-    refetchOnMount: false,
   });
 
-  if (isLoading) return <p>Loading, please wait...</p>;
-  if (isError || !note) return <p>Something went wrong.</p>;
-
-  const dateDisplay =
-    note.createdAt ? new Date(note.createdAt).toLocaleDateString("uk-UA") : "—";
+  if (isLoading) return <div>Loading...</div>;
 
   return (
-    <main className={css.main}>
-      <div className={css.container}>
-        <div className={css.item}>
-          <div className={css.header}>
-            <h2>{note.title}</h2>
-          </div>
-          <p className={css.tag}>{note.tag || "Todo"}</p>
-          <p className={css.content}>{note.content}</p>
-          <p className={css.date}>{dateDisplay}</p>
-        </div>
-      </div>
-    </main>
+    <div>
+      <h1>{note?.title}</h1>
+      <p>{note?.content}</p>
+    </div>
   );
-};
+}

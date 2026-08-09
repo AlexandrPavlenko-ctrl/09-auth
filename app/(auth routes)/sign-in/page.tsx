@@ -6,14 +6,19 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { login, checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
+import type { User } from "@/types/user";
 import css from "./SignInPage.module.css";
+
+interface AxiosSessionResponse {
+  data: User;
+}
 
 export default function SignIn() {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
   const [error, setError] = useState("");
 
-  const { data: session } = useQuery({
+  const { data: session, isSuccess } = useQuery({
     queryKey: ["session"],
     queryFn: checkSession,
     retry: false,
@@ -21,26 +26,47 @@ export default function SignIn() {
   });
 
   useEffect(() => {
-    if (session && typeof session !== "boolean") {
-      router.replace("/profile");
+    // ИСПРАВЛЕНО: Реагируем только если запрос завершился успешным статусом 200 OK
+    if (isSuccess && session && typeof session !== "boolean") {
+      const response = session as unknown as AxiosSessionResponse;
+      const userData =
+        response.data ? response.data : (session as unknown as User);
+
+      // ИСПРАВЛЕНО: Перенаправляем на главную ТОЛЬКО если в ответе есть реальный email залогиненного юзера.
+      // Если бэкенд вернул 401 ошибку или пустой объект — этот блок игнорируется, и форма откроется!
+      if (
+        userData &&
+        typeof userData === "object" &&
+        "email" in userData &&
+        userData.email
+      ) {
+        router.replace("/");
+      }
     }
-  }, [session, router]);
+  }, [session, isSuccess, router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
-    const formData = new FormData(event.currentTarget as HTMLFormElement);
+    const formData = new FormData(event.currentTarget);
     try {
       const credentials = {
         email: (formData.get("email") as string) || "",
         password: (formData.get("password") as string) || "",
       };
+
       const user = await login(credentials);
       setUser(user);
-      router.push("/profile");
+
+      // После успешного входа перенаправляем строго на главную страницу (/) по ТЗ ментора
+      router.push("/");
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error ?? "Login failed");
+        const serverMessage =
+          err.response?.data?.error || err.response?.data?.message;
+        setError(
+          typeof serverMessage === "string" ? serverMessage : "Login failed",
+        );
       } else {
         setError("Login failed");
       }

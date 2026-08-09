@@ -1,60 +1,62 @@
-import React from "react";
-import { Metadata } from "next";
-import { fetchNoteById } from "@/lib/api/clientApi";
-import { NoteDetailsClient } from "./NoteDetails.client"; // Перевірте шлях
+import {
+  QueryClient,
+  dehydrate,
+  HydrationBoundary,
+} from "@tanstack/react-query";
+import { notFound } from "next/navigation";
+import { fetchNoteById } from "@/lib/api/serverApi"; // Используем серверную функцию API
+import { NoteDetailsClient } from "./NoteDetails.client"; // Ваша клиентская страница/компонент
+import type { Metadata } from "next";
 
-interface Props {
+interface NotePageProps {
   params: Promise<{ id: string }>;
 }
 
-// Асинхронна генерація метаданих на основі реальних даних нотатки з API
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+/**
+ * Асинхронная генерация метаданых страницы
+ */
+export async function generateMetadata({
+  params,
+}: NotePageProps): Promise<Metadata> {
   const { id } = await params;
-
   try {
     const note = await fetchNoteById(id);
-    // Беремо перші 150 символів контенту для дескрипшену
-    const shortDescription =
-      note.content ?
-        note.content.substring(0, 150) + "..."
-      : "Детальний перегляд нотатки.";
-    const title = `${note.title || "Untitled Note"} | NoteHub`;
-
     return {
-      title,
-      description: shortDescription,
-      openGraph: {
-        title,
-        description: shortDescription,
-        url: `https://notehub.com/${id}`,
-        images: [
-          {
-            url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
-            width: 1200,
-            height: 630,
-            alt: note.title || "Note Details Preview",
-          },
-        ],
-      },
+      title: note?.title || "Note Details",
     };
   } catch {
-    // Безпечний фолбек, якщо нотатку не знайдено або API лежить
     return {
-      title: "Note Details | NoteHub",
-      description: "Detailed view of the note. Note not found or unavailable.",
+      title: "Note Not Found",
     };
   }
 }
 
-export default async function NotePage({ params }: Props) {
+/**
+ * Серверный компонент страницы с пред-загрузкой (Hydration SSR)
+ */
+export default async function NotePage({ params }: NotePageProps) {
   const { id } = await params;
-  const initialNote = await fetchNoteById(id);
 
-  // Ensure TypeScript recognizes the client component props
-  // Use React.ReactElement to avoid "Cannot find namespace 'JSX'" TS error
-  const NoteDetailsClientTyped = NoteDetailsClient as unknown as (props: {
-    initialNote: unknown;
-  }) => React.ReactElement;
+  // 1. Создаем QueryClient на стороне сервера
+  const queryClient = new QueryClient();
 
-  return <NoteDetailsClientTyped initialNote={initialNote} />;
+  try {
+    // 2. Предварительно загружаем данные в кэш React Query на сервере
+    await queryClient.prefetchQuery({
+      queryKey: ["note", id],
+      queryFn: () => fetchNoteById(id),
+    });
+  } catch {
+    // Если нотатка удалена, не существует или бэкенд упал — отдаем 404
+    notFound();
+  }
+
+  return (
+    // 3. Передаем дегидрированное состояние кэша через HydrationBoundary
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      {/* ИСПРАВЛЕНО: Убран проп id={id}, вызывавший ошибку типов.
+          Клиентский компонент сам возьмет id из строки URL через useParams */}
+      <NoteDetailsClient />
+    </HydrationBoundary>
+  );
 }

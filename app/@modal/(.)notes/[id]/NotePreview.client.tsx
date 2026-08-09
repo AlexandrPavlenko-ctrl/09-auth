@@ -4,11 +4,8 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNoteById } from "@/lib/api/clientApi";
-
-// 1. ВИПРАВЛЕНО: Замість прямого імпорту використовуємо динамічний імпорт Next.js
 import dynamic from "next/dynamic";
 
-// Завантажуємо модалку суто на клієнті в момент її фактичного монтування (прибирає preload варнінг)
 const Modal = dynamic(
   () => import("@/components/Modal/Modal").then((mod) => mod.Modal),
   { ssr: false },
@@ -33,13 +30,12 @@ export default function NotePreviewClient({ id }: NotePreviewClientProps) {
   } = useQuery({
     queryKey: ["note", id],
     queryFn: () => fetchNoteById(id),
-    refetchOnMount: false, // Обов'язкова опція за вимогами ТЗ
+    refetchOnMount: false,
   });
 
   return (
     <Modal onClose={handleClose}>
       <div style={{ padding: "10px" }}>
-        {/* Опрацювання стану помилки */}
         {isError && (
           <div
             className="error"
@@ -53,7 +49,6 @@ export default function NotePreviewClient({ id }: NotePreviewClientProps) {
           </div>
         )}
 
-        {/* Стан завантаження */}
         {isLoading && (
           <div
             className="loading"
@@ -63,14 +58,12 @@ export default function NotePreviewClient({ id }: NotePreviewClientProps) {
           </div>
         )}
 
-        {/* Стан, коли нотатку не знайдено */}
         {!isLoading && !isError && !note && (
           <div style={{ textAlign: "center", color: "#7f8c8d" }}>
             Нотатку не знайдено
           </div>
         )}
 
-        {/* Успішне відображення даних */}
         {!isLoading && !isError && note && (
           <article>
             <h2 style={{ color: "#2c3e50", marginBottom: "12px" }}>

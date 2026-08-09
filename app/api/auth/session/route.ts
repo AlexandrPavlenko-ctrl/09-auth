@@ -1,30 +1,48 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { cookies } from "next/headers";
+import { api } from "../../api";
+import { parseSetCookie } from "cookie";
+import { isAxiosError } from "axios";
+import { logErrorResponse } from "../../_utils/utils";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const cookieHeader = request.headers.get("cookie") || "";
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
+    const refreshToken = cookieStore.get("refreshToken")?.value;
 
-    const backendResponse = await fetch(
-      "https://notehub-api.goit.study/auth/session",
-      {
-        method: "GET",
-        headers: { Cookie: cookieHeader },
-      },
-    );
-
-    if (backendResponse.status === 200) {
-      const text = await backendResponse.text();
-      if (!text) {
-        return new NextResponse("", { status: 200 }); // Пустая строка по ТЗ, если неавторизован
-      }
-      const userData = JSON.parse(text);
-      return NextResponse.json(userData, { status: 200 });
+    if (accessToken) {
+      return NextResponse.json({ success: true });
     }
 
-    return new NextResponse("", { status: 200 });
+    if (refreshToken) {
+      const apiRes = await api.get("auth/session", {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
+      });
+
+      const setCookie = apiRes.headers["set-cookie"];
+
+      if (setCookie) {
+        const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+        for (const cookieStr of cookieArray) {
+          const parsed = parseSetCookie(cookieStr);
+
+          if (parsed.value) {
+            cookieStore.set(parsed.name, parsed.value, parsed);
+          }
+        }
+        return NextResponse.json({ success: true }, { status: 200 });
+      }
+    }
+    return NextResponse.json({ success: false }, { status: 200 });
   } catch (error) {
-    console.error("Proxy session error:", error);
-    return new NextResponse("", { status: 200 });
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json({ success: false }, { status: 200 });
+    }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ success: false }, { status: 200 });
   }
 }

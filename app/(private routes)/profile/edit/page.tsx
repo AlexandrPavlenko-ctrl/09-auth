@@ -9,7 +9,7 @@ import { updateMe, uploadAvatar } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import css from "./EditProfilePage.module.css";
 
-// Экспортируем как именованную функцию для динамического импорта ниже
+// Експортуємо як іменовану функцію для динамічного імпорту нижче
 export function EditProfileComponent() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -98,7 +98,6 @@ export function EditProfileComponent() {
     );
 
     setCrop((prev) => ({ ...prev, x: nextX, y: nextY }));
-    // Переопределение setDragStart отсюда удалено для плавной и стабильной работы кропа
   };
 
   const handleCropMouseUp = () => setIsDragging(false);
@@ -161,11 +160,9 @@ export function EditProfileComponent() {
           type: "image/png",
         });
 
-        // Прямой вызов функции API GoIT без метода .patch()
         await uploadAvatar(avatarFile);
       }
 
-      // Обновляем текстовые данные профиля (avatar сюда не передаем)
       mutation.mutate({
         username,
         email: user.email,
@@ -177,7 +174,6 @@ export function EditProfileComponent() {
     }
   };
 
-  // Компонент загружается строго на клиенте, поэтому проверка безопасна
   if (!user) {
     return (
       <div style={{ textAlign: "center", padding: "40px" }}>Loading...</div>
@@ -189,7 +185,7 @@ export function EditProfileComponent() {
       <div className={css.profileCard}>
         <h1 className={css.formTitle}>Edit Profile</h1>
 
-        <form onSubmit={handleFormAction} className={css.formStructure}>
+        <form onSubmit={handleFormAction}>
           <div className={css.avatarWrapper}>
             {avatarPreview ?
               <div
@@ -259,24 +255,55 @@ export function EditProfileComponent() {
             )}
           </div>
 
-          <div className={css.inputGroup}>
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              defaultValue={user.username}
-              className={css.inputField}
-            />
+          {/* ПОЛЯ ВВОДУ: Використовують ваші стилі .profileInfo та .usernameWrapper */}
+          <div className={css.profileInfo}>
+            <div className={css.usernameWrapper}>
+              <label htmlFor="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                defaultValue={user.username}
+                className={css.input}
+              />
+            </div>
+
+            <div className={css.usernameWrapper}>
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={user.email}
+                disabled
+                className={css.input}
+                style={{
+                  backgroundColor: "#f8f9fa",
+                  cursor: "not-allowed",
+                  color: "#6c757d",
+                }}
+              />
+            </div>
           </div>
 
-          <button
-            type="submit"
-            className={css.saveButton}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? "Saving..." : "Save Changes"}
-          </button>
+          {/* КНОПКИ ДІЙ: Використовують ваш рідний клас .actions та додають кнопку Cancel */}
+          <div className={css.actions}>
+            <button
+              type="submit"
+              className={css.saveButton}
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? "Saving..." : "Save Changes"}
+            </button>
+
+            <button
+              type="button"
+              className={css.cancelButton}
+              onClick={() => router.push("/profile")}
+            >
+              Cancel
+            </button>
+          </div>
         </form>
 
         {error && <p className={css.errorMessage}>{error}</p>}
@@ -285,8 +312,7 @@ export function EditProfileComponent() {
   );
 }
 
-// Отключаем SSR (серверный рендеринг) для всей страницы,
-// чтобы полностью избежать конфликтов гидратации и ошибок синхронного setState
+// Запобігає помилкам гідрації на Vercel
 const EditProfilePageNoSSR = dynamic(
   async () => {
     return EditProfileComponent;

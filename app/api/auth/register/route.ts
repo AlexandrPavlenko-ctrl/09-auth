@@ -1,45 +1,43 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { api } from "../../api";
+import { cookies } from "next/headers";
+import { parseSetCookie } from "cookie";
+import { isAxiosError } from "axios";
+import { logErrorResponse } from "../../_utils/utils";
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = (await request.json()) as Record<string, string>;
+    const body = await req.json();
 
-    const backendResponse = await fetch(
-      "https://notehub-api.goit.study/auth/register",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
+    const apiRes = await api.post("auth/register", body);
 
-    if (!backendResponse.ok) {
-      const errorData = (await backendResponse.json()) as Record<
-        string,
-        unknown
-      >;
+    const cookieStore = await cookies();
+    const setCookie = apiRes.headers["set-cookie"];
+
+    if (setCookie) {
+      const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+      for (const cookieStr of cookieArray) {
+        const parsed = parseSetCookie(cookieStr);
+
+        if (parsed.value) {
+          cookieStore.set(parsed.name, parsed.value, parsed);
+        }
+      }
+      return NextResponse.json(apiRes.data, { status: apiRes.status });
+    }
+
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
       return NextResponse.json(
-        { message: errorData.message || "Registration failed" },
-        { status: backendResponse.status },
+        { error: error.message, response: error.response?.data },
+        { status: error.status },
       );
     }
-
-    const userData = await backendResponse.json();
-    const response = NextResponse.json(userData, { status: 201 });
-
-    const setCookieHeaders = backendResponse.headers.getSetCookie();
-    if (setCookieHeaders.length > 0) {
-      setCookieHeaders.forEach((cookie) => {
-        response.headers.append("set-cookie", cookie);
-      });
-    }
-
-    return response;
-  } catch (error) {
-    console.error("Proxy register error:", error);
+    logErrorResponse({ message: (error as Error).message });
     return NextResponse.json(
-      { message: "Internal Server Error" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }
